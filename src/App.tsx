@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRef, useEffect } from 'react';
 import { Orb } from './components/Orb';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { MicButton } from './components/MicButton';
@@ -8,51 +9,69 @@ import { useVoice } from './hooks/useVoice';
 import { OrbState } from './types/voice';
 import './index.css';
 
-/* ── Starfield background ─────────────────────────────────────────────── */
-const STARS = Array.from({ length: 80 }, (_, i) => ({
+/* ── Starfield ────────────────────────────────────────────────────────── */
+const STARS = Array.from({ length: 60 }, (_, i) => ({
   id: i,
   x:  Math.random() * 100,
   y:  Math.random() * 100,
-  r:  0.5 + Math.random() * 1.5,
-  d:  2 + Math.random() * 4,
+  r:  0.4 + Math.random() * 1.2,
+  d:  2.5 + Math.random() * 4,
+  delay: Math.random() * 3,
 }));
 
 function StarField() {
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
       {STARS.map((s) => (
         <motion.div
           key={s.id}
           style={{
-            position:     'absolute',
-            left:         `${s.x}%`,
-            top:          `${s.y}%`,
-            width:        s.r * 2,
-            height:       s.r * 2,
+            position: 'absolute',
+            left: `${s.x}%`,
+            top: `${s.y}%`,
+            width: s.r * 2,
+            height: s.r * 2,
             borderRadius: '50%',
-            background:   'rgba(196,202,216,0.7)',
+            background: 'rgba(196,202,216,0.8)',
           }}
-          animate={{ opacity: [0.2, 0.9, 0.2] }}
-          transition={{ duration: s.d, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 3 }}
+          animate={{ opacity: [0.15, 0.85, 0.15] }}
+          transition={{ duration: s.d, repeat: Infinity, ease: 'easeInOut', delay: s.delay }}
         />
       ))}
     </div>
   );
 }
 
-/* ── Grid lines ───────────────────────────────────────────────────────── */
+/* ── Grid ─────────────────────────────────────────────────────────────── */
 function GridLines() {
   return (
     <div
       style={{
-        position:   'absolute',
-        inset:      0,
+        position: 'fixed',
+        inset: 0,
         backgroundImage: `
-          linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px)
+          linear-gradient(rgba(0,212,255,0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,212,255,0.035) 1px, transparent 1px)
         `,
-        backgroundSize: '60px 60px',
-        pointerEvents:  'none',
+        backgroundSize: '64px 64px',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    />
+  );
+}
+
+/* ── Top vignette ─────────────────────────────────────────────────────── */
+function Vignette() {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background:
+          'radial-gradient(ellipse at center, transparent 40%, rgba(4,4,12,0.85) 100%)',
+        pointerEvents: 'none',
+        zIndex: 0,
       }}
     />
   );
@@ -60,7 +79,7 @@ function GridLines() {
 
 /* ── Status badge ─────────────────────────────────────────────────────── */
 const STATUS_LABEL: Record<OrbState, string> = {
-  [OrbState.IDLE]:      'REION READY',
+  [OrbState.IDLE]:      'REION  READY',
   [OrbState.LISTENING]: 'LISTENING',
   [OrbState.THINKING]:  'PROCESSING',
   [OrbState.SPEAKING]:  'RESPONDING',
@@ -68,7 +87,7 @@ const STATUS_LABEL: Record<OrbState, string> = {
 };
 const STATUS_COLOR: Record<OrbState, string> = {
   [OrbState.IDLE]:      '#00d4ff',
-  [OrbState.LISTENING]: '#00d4ff',
+  [OrbState.LISTENING]: '#00ffcc',
   [OrbState.THINKING]:  '#8b5cf6',
   [OrbState.SPEAKING]:  '#00d4ff',
   [OrbState.ERROR]:     '#ef4444',
@@ -76,147 +95,174 @@ const STATUS_COLOR: Record<OrbState, string> = {
 
 function StatusBadge({ state }: { state: OrbState }) {
   return (
-    <motion.div
-      key={state}
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      style={{
-        display:       'flex',
-        alignItems:    'center',
-        gap:           8,
-        fontFamily:    'var(--font-display)',
-        fontSize:      '0.65rem',
-        letterSpacing: '0.2em',
-        color:         STATUS_COLOR[state],
-        textTransform: 'uppercase',
-      }}
-    >
+    <AnimatePresence mode="wait">
       <motion.div
-        animate={{ opacity: [1, 0.3, 1] }}
-        transition={{ duration: 1.2, repeat: Infinity }}
+        key={state}
+        initial={{ opacity: 0, y: 6, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -4, scale: 0.95 }}
+        transition={{ duration: 0.25 }}
         style={{
-          width: 6, height: 6, borderRadius: '50%',
-          background: STATUS_COLOR[state],
-          boxShadow: `0 0 6px ${STATUS_COLOR[state]}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          fontFamily: 'var(--font-display)',
+          fontSize: '0.6rem',
+          letterSpacing: '0.25em',
+          color: STATUS_COLOR[state],
+          textTransform: 'uppercase',
+          userSelect: 'none',
         }}
-      />
-      {STATUS_LABEL[state]}
-    </motion.div>
+      >
+        <motion.span
+          animate={{ opacity: [1, 0.2, 1] }}
+          transition={{ duration: 1.0, repeat: Infinity }}
+          style={{
+            display: 'inline-block',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: STATUS_COLOR[state],
+            boxShadow: `0 0 8px ${STATUS_COLOR[state]}, 0 0 16px ${STATUS_COLOR[state]}88`,
+            flexShrink: 0,
+          }}
+        />
+        {STATUS_LABEL[state]}
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
 /* ── MAIN APP ─────────────────────────────────────────────────────────── */
 export default function App() {
   const { orbState, audioLevel, transcript } = useVoiceStore();
-  const { analyser, toggleListening }        = useVoice();
+  const { analyser, toggleListening } = useVoice();
+
+  /* Keep analyser ref fresh for AudioVisualizer */
+  const analyserRef = useRef(analyser);
+  useEffect(() => { analyserRef.current = analyser; }, [analyser]);
+
+  /* Orb size — responsive */
+  const ORB_SIZE   = Math.min(260, window.innerWidth * 0.55);
+  const VIZ_SIZE   = ORB_SIZE + 120;
 
   return (
     <div
       style={{
-        position:   'relative',
-        width:      '100vw',
-        height:     '100vh',
-        overflow:   'hidden',
-        background: 'var(--bg)',
-        display:    'flex',
-        flexDirection: 'column',
+        position: 'fixed',
+        inset: 0,
+        display: 'grid',
+        gridTemplateRows: 'auto 1fr auto auto auto',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyItems: 'center',
+        background: 'var(--bg)',
+        overflow: 'hidden',
       }}
     >
-      {/* Background layers */}
+      {/* Layer 0: background effects */}
       <GridLines />
       <StarField />
+      <Vignette />
 
-      {/* Top brand */}
-      <div
+      {/* ─── Row 0: Top brand ─────────────────────────────────────────── */}
+      <header
         style={{
-          position:  'absolute',
-          top:       28,
-          left:      '50%',
-          transform: 'translateX(-50%)',
-          display:   'flex',
+          position: 'relative',
+          zIndex: 2,
+          display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap:        6,
+          gap: 5,
+          paddingTop: 28,
+          paddingBottom: 8,
         }}
       >
         <span
           style={{
-            fontFamily:    'var(--font-display)',
-            fontSize:      '1.5rem',
-            fontWeight:    700,
-            letterSpacing: '0.35em',
-            background:    'linear-gradient(90deg, #00d4ff, #8b5cf6)',
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(1rem, 4vw, 1.6rem)',
+            fontWeight: 800,
+            letterSpacing: '0.38em',
+            background: 'linear-gradient(90deg, #00d4ff 0%, #8b5cf6 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
+            lineHeight: 1,
           }}
         >
           R.E.I.O.N
         </span>
         <span
           style={{
-            fontFamily:    'var(--font-primary)',
-            fontSize:      '0.6rem',
-            letterSpacing: '0.18em',
-            color:         'rgba(196,202,216,0.4)',
+            fontFamily: 'var(--font-primary)',
+            fontSize: 'clamp(0.45rem, 1.2vw, 0.58rem)',
+            letterSpacing: '0.15em',
+            color: 'rgba(196,202,216,0.35)',
             textTransform: 'uppercase',
           }}
         >
           Responsive · Extensible · Intelligent · Operational · Network
         </span>
-      </div>
+      </header>
 
-      {/* ── Central Orb area ── */}
-      <div
+      {/* ─── Row 1: Central orb stage ─────────────────────────────────── */}
+      <main
         style={{
-          position:       'relative',
-          display:        'flex',
-          alignItems:     'center',
+          position: 'relative',
+          zIndex: 2,
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
-          width:          380,
-          height:         380,
+          width: VIZ_SIZE,
+          height: VIZ_SIZE,
         }}
       >
-        {/* Audio visualizer ring (behind orb) */}
-        <AudioVisualizer analyser={analyser} state={orbState} size={380} />
+        {/* Frequency ring — behind the orb */}
+        <AudioVisualizer analyser={analyser} state={orbState} size={VIZ_SIZE} />
 
-        {/* The logo orb */}
-        <div style={{ position: 'absolute' }}>
-          <Orb state={orbState} audioLevel={audioLevel} />
+        {/* The 3D logo orb */}
+        <div
+          style={{
+            position: 'absolute',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Orb state={orbState} audioLevel={audioLevel} size={ORB_SIZE} />
         </div>
-      </div>
+      </main>
 
-      {/* Status badge below orb */}
-      <div style={{ marginTop: 24 }}>
+      {/* ─── Row 2: Status badge ──────────────────────────────────────── */}
+      <div style={{ position: 'relative', zIndex: 2, marginTop: 16 }}>
         <StatusBadge state={orbState} />
       </div>
 
-      {/* Mic button */}
-      <div style={{ marginTop: 40 }}>
-        <MicButton
-          state={orbState}
-          onPress={toggleListening}
-        />
+      {/* ─── Row 3: Mic button ────────────────────────────────────────── */}
+      <div style={{ position: 'relative', zIndex: 2, marginTop: 20, marginBottom: 8 }}>
+        <MicButton state={orbState} onPress={toggleListening} />
       </div>
 
-      {/* Keyboard hint */}
-      <div
+      {/* ─── Row 4: Keyboard hint ─────────────────────────────────────── */}
+      <footer
         style={{
-          position:  'absolute',
-          bottom:    22,
+          position: 'relative',
+          zIndex: 2,
+          paddingBottom: 20,
           fontFamily: 'var(--font-primary)',
-          fontSize:  '0.65rem',
+          fontSize: '0.6rem',
           letterSpacing: '0.1em',
-          color:     'rgba(196,202,216,0.25)',
+          color: 'rgba(196,202,216,0.2)',
           textTransform: 'uppercase',
         }}
       >
-        Press <kbd style={{ color: 'rgba(0,212,255,0.5)', fontWeight: 600 }}>Space</kbd> or tap mic to speak
-      </div>
+        Press{' '}
+        <kbd style={{ color: 'rgba(0,212,255,0.45)', fontWeight: 600, fontStyle: 'normal' }}>
+          Space
+        </kbd>{' '}
+        or tap mic · hold to push-to-talk
+      </footer>
 
-      {/* Transcript overlay */}
+      {/* ─── Transcript overlay (floats above everything) ─────────────── */}
       <TranscriptDisplay
         userText={transcript.user}
         assistantText={transcript.assistant}

@@ -1,0 +1,4 @@
+node_modules/
+public/audio/
+public/temp/
+.env

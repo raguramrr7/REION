@@ -5,6 +5,7 @@ import { OrbState } from '../types/voice';
 interface OrbProps {
   state: OrbState;
   audioLevel?: number; // 0-100
+  size?: number;       // default 260
 }
 
 /* ─── CONFIG PER STATE ──────────────────────────────────────────────────── */
@@ -124,9 +125,9 @@ function Particle({ index, color }: { index: number; color: string }) {
 }
 
 /* ─── MAIN ORB COMPONENT ─────────────────────────────────────────────────── */
-export const Orb: React.FC<OrbProps> = ({ state, audioLevel = 0 }) => {
-  const cfg   = STATE_CONFIG[state];
-  const SIZE  = 260;
+export const Orb: React.FC<OrbProps> = ({ state, audioLevel = 0, size: propSize }) => {
+  const cfg  = STATE_CONFIG[state];
+  const SIZE = propSize ?? 260;
 
   /* Scale pulse driven by audio level */
   const audioScale = state === OrbState.LISTENING || state === OrbState.SPEAKING
