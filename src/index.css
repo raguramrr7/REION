@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* ─── REION DESIGN TOKENS ─────────────────────────────────────────────────── */
+:root {
+  --bg:            #04040c;
+  --bg-surface:    #08080f;
+
+  --cyan:          #00d4ff;
+  --cyan-dim:      #0099cc;
+  --violet:        #8b5cf6;
+  --violet-dim:    #6d3fd0;
+  --magenta:       #c026d3;
+  --silver:        #c4cad8;
+  --silver-dim:    #6b7280;
+
+  /* Orb state glows */
+  --glow-idle:      0 0 40px rgba(0, 212, 255, 0.30), 0 0 80px rgba(139, 92, 246, 0.20);
+  --glow-listening: 0 0 60px rgba(0, 212, 255, 0.70), 0 0 120px rgba(0, 212, 255, 0.30);
+  --glow-thinking:  0 0 60px rgba(139, 92, 246, 0.80), 0 0 120px rgba(139, 92, 246, 0.40);
+  --glow-speaking:  0 0 60px rgba(0, 212, 255, 0.60), 0 0 120px rgba(139, 92, 246, 0.60);
+  --glow-error:     0 0 60px rgba(239, 68, 68, 0.80),  0 0 120px rgba(239, 68, 68, 0.40);
+
+  --font-primary: 'Inter', system-ui, sans-serif;
+  --font-display: 'Orbitron', sans-serif;
+
+  --transition-fast: 150ms cubic-bezier(0.4,0,0.2,1);
+  --transition-base: 300ms cubic-bezier(0.4,0,0.2,1);
+  --transition-slow: 600ms cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ─── RESET ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--silver);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── KEYFRAMES ────────────────────────────────────────────────────────────── */
+
+/* Idle – gentle pulse + slow rotate */
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1);    filter: brightness(0.9); }
+  50%       { transform: scale(1.04); filter: brightness(1.1); }
+}
+
+/* Listening – fast pulse outward */
+@keyframes orb-listen {
+  0%, 100% { transform: scale(1);    }
+  50%       { transform: scale(1.08); }
+}
+
+/* Thinking – tight spin on Z axis */
+@keyframes orb-think-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Speaking – sonar ring expansion */
+@keyframes sonar-ring {
+  0%   { transform: scale(0.9);  opacity: 0.8; }
+  100% { transform: scale(2.2);  opacity: 0; }
+}
+
+/* Hex grid slow drift */
+@keyframes hex-drift {
+  0%   { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(30deg) scale(1.05); }
+}
+
+/* Arc orbit */
+@keyframes arc-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes arc-orbit-rev {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+
+/* Ring dash animation */
+@keyframes dash-spin {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -283; }
+}
+
+/* Particle float */
+@keyframes particle-float {
+  0%   { transform: translateY(0)   translateX(0)   opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(-80px) translateX(20px) opacity: 0; }
+}
+
+/* Text fade in */
+@keyframes text-fade-in {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);   filter: blur(0); }
+}
+
+/* Text fade out */
+@keyframes text-fade-out {
+  from { opacity: 1; transform: translateY(0);    filter: blur(0); }
+  to   { opacity: 0; transform: translateY(-8px); filter: blur(4px); }
+}
+
+/* Error shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-8px); }
+  40%      { transform: translateX(8px); }
+  60%      { transform: translateX(-6px); }
+  80%      { transform: translateX(6px); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
