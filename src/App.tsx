@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRef, useEffect } from 'react';
+
+
 import { Orb } from './components/Orb';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { MicButton } from './components/MicButton';
@@ -136,11 +137,7 @@ function StatusBadge({ state }: { state: OrbState }) {
 /* ── MAIN APP ─────────────────────────────────────────────────────────── */
 export default function App() {
   const { orbState, audioLevel, transcript } = useVoiceStore();
-  const { analyser, toggleListening } = useVoice();
-
-  /* Keep analyser ref fresh for AudioVisualizer */
-  const analyserRef = useRef(analyser);
-  useEffect(() => { analyserRef.current = analyser; }, [analyser]);
+  const { analyserRef, toggleListening } = useVoice();
 
   /* Orb size — responsive */
   const ORB_SIZE   = Math.min(260, window.innerWidth * 0.55);
@@ -217,7 +214,7 @@ export default function App() {
         }}
       >
         {/* Frequency ring — behind the orb */}
-        <AudioVisualizer analyser={analyser} state={orbState} size={VIZ_SIZE} />
+        <AudioVisualizer analyser={analyserRef.current} state={orbState} size={VIZ_SIZE} />
 
         {/* The 3D logo orb */}
         <div
