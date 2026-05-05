@@ -177,7 +177,7 @@ export function useVoice() {
       const data = await res.json() as {
         transcript: string;
         response:   string;
-        audio_url?: string;
+        audio_base64?: string;
       };
 
       console.log('[REION] Got response:', data.transcript, '→', data.response.slice(0, 60));
@@ -185,8 +185,8 @@ export function useVoice() {
       store.setTranscript({ user: data.transcript, assistant: data.response });
       store.setOrbState(OrbState.SPEAKING);
 
-      if (data.audio_url) {
-        const audio = new Audio(`${apiBase}${data.audio_url}`);
+      if (data.audio_base64) {
+        const audio = new Audio(`data:audio/wav;base64,${data.audio_base64}`);
         audio.onended = () => {
           store.setOrbState(OrbState.IDLE);
           setTimeout(() => useVoiceStore.getState().clearTranscript(), 1500);

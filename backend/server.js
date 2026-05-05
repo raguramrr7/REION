@@ -2,15 +2,9 @@ import express from 'express';
 import multer from 'multer';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import Groq from 'groq-sdk';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import Groq, { toFile } from 'groq-sdk';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
 
 /* ─── Validate API key on startup ──────────────────────────────────────── */
 if (!process.env.GROQ_API_KEY) {
@@ -30,19 +24,13 @@ Keep responses concise (1-4 sentences) and conversational since they will be spo
 Do not use markdown formatting, bullet points, or symbols in your response.
 Be direct and helpful.`;
 
-/* ─── Directories ───────────────────────────────────────────────────────── */
-const AUDIO_DIR = path.join(__dirname, 'public', 'audio');
-const TEMP_DIR  = path.join(__dirname, 'public', 'temp');
-[AUDIO_DIR, TEMP_DIR].forEach((d) => fs.mkdirSync(d, { recursive: true }));
+/* ─── Express app ───────────────────────────────────────────────────────── */
 
 /* ─── Express app ───────────────────────────────────────────────────────── */
 const app = express();
 
-app.use(cors({ origin: ['http://localhost:5173', 'http://127.0.0.1:5173'] }));
+app.use(cors({ origin: '*' })); // Allow all origins for production
 app.use(express.json());
-
-// Serve generated audio files to the frontend
-app.use('/audio', express.static(AUDIO_DIR));
 
 /* ─── Multer — audio files into memory buffer ───────────────────────────── */
 const upload = multer({
@@ -64,20 +52,17 @@ app.post('/voice', upload.single('audio'), async (req, res) => {
 
   console.log(`\n▶ [${sessionId}] Audio received (${(audioBuffer.length / 1024).toFixed(1)} KB)`);
 
-  /* ── Step 1: Save audio to temp file (required for Groq STT) ─── */
-  const tempFile = path.join(TEMP_DIR, `${sessionId}_${Date.now()}.webm`);
-  fs.writeFileSync(tempFile, audioBuffer);
-
   try {
-    /* ── Step 2: STT — Whisper Large V3 Turbo ────────────────────── */
+    /* ── Step 2: STT — Whisper Large V3 Turbo (In Memory) ────────── */
     console.log('  🎙  Transcribing with Whisper...');
+    const fileForGroq = await toFile(audioBuffer, 'audio.webm', { type: 'audio/webm' });
+    
     const transcription = await groq.audio.transcriptions.create({
-      file:            fs.createReadStream(tempFile),
+      file:            fileForGroq,
       model:           'whisper-large-v3-turbo',
       response_format: 'json',
       language:        'en',
     });
-    fs.unlinkSync(tempFile); // clean up temp audio
 
     const transcript = transcription.text.trim();
     if (!transcript) {
@@ -117,25 +102,20 @@ app.post('/voice', upload.single('audio'), async (req, res) => {
       response_format: 'wav',
     });
 
-    // Save WAV file — overwrite per session so old files don't pile up
-    const audioFilename = `${sessionId}.wav`;
-    const audioPath     = path.join(AUDIO_DIR, audioFilename);
+    // Convert audio to base64 to send in JSON payload
     const audioBuffer2  = Buffer.from(await ttsResponse.arrayBuffer());
-    fs.writeFileSync(audioPath, audioBuffer2);
-    console.log(`  ✅ Audio saved (${(audioBuffer2.length / 1024).toFixed(1)} KB)`);
+    const audioBase64 = audioBuffer2.toString('base64');
+    console.log(`  ✅ Audio generated (${(audioBuffer2.length / 1024).toFixed(1)} KB)`);
 
     /* ── Send response to frontend ───────────────────────────────── */
     return res.json({
       transcript,
       response:  responseText,
-      audio_url: `/audio/${audioFilename}`,
+      audio_base64: audioBase64,
       session_history_length: history.length,
     });
 
   } catch (err) {
-    // Clean up temp file if it still exists
-    if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
-
     console.error('  ❌ Pipeline error:', err?.message || err);
 
     // Give the frontend a useful error
@@ -148,9 +128,6 @@ app.post('/voice', upload.single('audio'), async (req, res) => {
 /* ─── DELETE /session/:id — clear a session's memory ──────────────────── */
 app.delete('/session/:id', (req, res) => {
   sessions.delete(req.params.id);
-  // Clean up audio file too
-  const audioPath = path.join(AUDIO_DIR, `${req.params.id}.wav`);
-  if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
   console.log(`🗑  Session ${req.params.id} cleared.`);
   res.json({ ok: true });
 });
