@@ -54,8 +54,8 @@ app.post('/voice', upload.single('audio'), async (req, res) => {
 
   try {
     /* ── Step 2: STT — Whisper Large V3 Turbo (In Memory) ────────── */
-    console.log('  🎙  Transcribing with Whisper...');
-    const fileForGroq = await toFile(audioBuffer, 'audio.webm', { type: 'audio/webm' });
+    console.log(`  🎙  Transcribing with Whisper (${req.file.mimetype})...`);
+    const fileForGroq = await toFile(audioBuffer, req.file.originalname || 'audio.webm', { type: req.file.mimetype || 'audio/webm' });
     
     const transcription = await groq.audio.transcriptions.create({
       file:            fileForGroq,

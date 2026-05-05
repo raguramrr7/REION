@@ -19,7 +19,7 @@ export function useVoice() {
   const isRecordingRef   = useRef(false);
 
   /* stopListening as a stable ref so silence-timer can call it safely */
-  const stopListeningRef = useRef<() => Promise<void>>();
+  const stopListeningRef = useRef<() => Promise<void>>(undefined);
 
   /* ── Level meter loop (runs while recording) ─────────────────────────── */
   const startLevelMeter = useCallback(() => {
@@ -158,8 +158,9 @@ export function useVoice() {
       const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const sessionId = getOrCreateSessionId();
 
+      const ext = blob.type.includes('mp4') || blob.type.includes('m4a') ? 'm4a' : 'webm';
       const fd = new FormData();
-      fd.append('audio', blob, 'recording.webm');
+      fd.append('audio', blob, `recording.${ext}`);
       fd.append('session_id', sessionId);
 
       console.log(`[REION] Sending to ${apiBase}/voice ...`);

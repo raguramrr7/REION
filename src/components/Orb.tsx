@@ -158,8 +158,7 @@ export const Orb: React.FC<OrbProps> = ({ state, audioLevel = 0, size: propSize 
     },
   };
 
-  const gradientId   = `reion-grad-${state}`;
-  const filterIdGlow = `reion-glow-${state}`;
+  const gradientId = `reion-grad-${state}`;
 
   return (
     <div
@@ -185,15 +184,14 @@ export const Orb: React.FC<OrbProps> = ({ state, audioLevel = 0, size: propSize 
           ))}
       </AnimatePresence>
 
-      {/* ── OUTER GLOW HALO ── */}
+      {/* ── OUTER GLOW HALO (hardware accelerated) ── */}
       <motion.div
         style={{
           position: 'absolute',
-          inset: -30,
+          inset: -20,
           borderRadius: '50%',
-          background: `radial-gradient(circle, ${cfg.glowColor} 0%, ${cfg.glowColor2} 40%, transparent 70%)`,
+          background: `radial-gradient(circle, ${cfg.glowColor} 0%, transparent 60%)`,
           pointerEvents: 'none',
-          filter: 'blur(12px)',
         }}
         animate={{ opacity: [0.7, 1, 0.7] }}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -253,12 +251,6 @@ export const Orb: React.FC<OrbProps> = ({ state, audioLevel = 0, size: propSize 
               <stop offset="0%"   stopColor={cfg.primaryColor} />
               <stop offset="100%" stopColor={cfg.secondaryColor} />
             </linearGradient>
-
-            {/* Glow filter */}
-            <filter id={filterIdGlow} x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
 
             {/* Hex pattern */}
             <pattern id="hex-pattern" x="0" y="0" width="20" height="17.32" patternUnits="userSpaceOnUse">
@@ -350,7 +342,6 @@ export const Orb: React.FC<OrbProps> = ({ state, audioLevel = 0, size: propSize 
           <path
             d="M88 170V88h46c14 0 25 4 32 11s11 17 11 29c0 9-2.5 16.5-7.5 22.5S157 160 148 162l38 8H162l-34-7.5V170H88zm24-92v42h22c8 0 14-1.8 18-5.5s6-8.5 6-14.5c0-6.2-2-11-6-14.5S142 80 134 80H112v-2z"
             fill={`url(#${gradientId})`}
-            filter={`url(#${filterIdGlow})`}
           />
           {/* 3D bevel highlight */}
           <path
